@@ -1,0 +1,45 @@
+import matplotlib.pyplot as plt
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+# URL страницы с диванами
+url = "https://www.divan.ru/samara/category/divany-i-kresla"  # Возможно, будет нужна конкретная страница
+
+# Заголовки для запроса (чтобы сайт не блокировал)
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36"
+}
+
+# Выполняем запрос
+response = requests.get(url, headers=headers)
+soup = BeautifulSoup(response.content, "html.parser")
+
+# Находим названия и цены
+sofas = []
+for item in soup.find_all("div", class_="_Ud0k U4KZV"):  # Заменить class_ на актуальный класс на сайте
+    name = item.find("h2", class_="_Ud0k U4KZV").text.strip()
+    price = item.find("span", class_="_Ud0k U4KZV").text.strip()
+    price = int(price.replace("₽", "").replace(" ", ""))  # Убираем пробелы и символ ₽
+    sofas.append({"Name": name, "Price": price})
+
+# Создаем DataFrame и сохраняем в CSV
+df = pd.DataFrame(sofas)
+df.to_csv("sofas_prices.csv", index=False)
+
+# Загружаем данные
+df = pd.read_csv("sofas_prices.csv")
+
+# Средняя цена
+avg_price = df["Price"].mean()
+print(f"Средняя цена на диваны: {avg_price:.2f} рублей")
+
+import matplotlib.pyplot as plt
+
+# Гистограмма цен
+plt.figure(figsize=(10, 6))
+plt.hist(df["Price"], bins=20, color="skyblue", edgecolor="black")
+plt.title("Распределение цен на диваны")
+plt.xlabel("Цена, ₽")
+plt.ylabel("Количество диванов")
+plt.show()
